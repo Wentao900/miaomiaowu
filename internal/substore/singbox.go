@@ -658,11 +658,16 @@ func (p *SingboxProducer) grpcParser(proxy Proxy, parsed map[string]interface{})
 }
 
 func (p *SingboxProducer) tlsParser(proxy Proxy, parsed map[string]interface{}) {
+	existingTLS, hasExistingTLS := parsed["tls"].(map[string]interface{})
+
 	tls := map[string]interface{}{
 		"enabled": false,
 	}
 
 	if GetBool(proxy, "tls") {
+		tls["enabled"] = true
+	}
+	if hasExistingTLS && GetBool(existingTLS, "enabled") {
 		tls["enabled"] = true
 	}
 
@@ -676,7 +681,9 @@ func (p *SingboxProducer) tlsParser(proxy Proxy, parsed map[string]interface{}) 
 		tls["server_name"] = sni
 	}
 
-	if GetBool(proxy, "skip-cert-verify") || GetBool(proxy, "insecure") {
+	if fp := GetString(proxy, "tls-fingerprint"); fp != "" {
+		tls["certificate_public_key_sha256"] = []string{NormalizeCertSHA256(fp)}
+	} else if GetBool(proxy, "skip-cert-verify") || GetBool(proxy, "insecure") {
 		tls["insecure"] = true
 	}
 
@@ -777,10 +784,19 @@ func (p *SingboxProducer) tlsParser(proxy Proxy, parsed map[string]interface{}) 
 		tls["client_key_path"] = client_key_path
 	}
 
-	// Only add tls if enabled
-	if tls["enabled"].(bool) {
-		parsed["tls"] = tls
+	if !tls["enabled"].(bool) {
+		return
 	}
+
+	if hasExistingTLS {
+		for key, val := range tls {
+			existingTLS[key] = val
+		}
+		parsed["tls"] = existingTLS
+		return
+	}
+
+	parsed["tls"] = tls
 }
 
 // Parser implementations

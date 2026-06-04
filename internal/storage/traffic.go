@@ -1244,6 +1244,25 @@ CREATE TABLE IF NOT EXISTS speed_testers (
 		return fmt.Errorf("migrate speed_testers: %w", err)
 	}
 
+	const announcementsSchema = `
+CREATE TABLE IF NOT EXISTS announcements (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    title TEXT NOT NULL,
+    content TEXT NOT NULL,
+    type TEXT NOT NULL DEFAULT 'info' CHECK (type IN ('info', 'warning', 'critical')),
+    is_active INTEGER NOT NULL DEFAULT 1,
+    starts_at TIMESTAMP,
+    expires_at TIMESTAMP,
+    created_by TEXT NOT NULL DEFAULT '',
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS idx_announcements_active ON announcements(is_active);
+`
+	if _, err := r.db.Exec(announcementsSchema); err != nil {
+		return fmt.Errorf("migrate announcements: %w", err)
+	}
+
 	return nil
 }
 

@@ -123,6 +123,18 @@ interface Producer {
     produce: (proxy: Proxy) => string;
 }
 
+function normalizeCertSHA256(fp: string): string {
+    return fp.trim().replace(/[: ]/g, '').toLowerCase();
+}
+
+/** Xray-core >= 2026-06-01 removed allowInsecure; prefer pinSHA256 when available. */
+function appendSkipCertVerifyParams(proxy: Proxy): string {
+    if (proxy['tls-fingerprint']) {
+        return `&pinSHA256=${encodeURIComponent(normalizeCertSHA256(proxy['tls-fingerprint']))}`;
+    }
+    return '';
+}
+
 function vless(proxy: Proxy): string {
     let security = 'none';
     const isReality = proxy['reality-opts'];
@@ -152,10 +164,8 @@ function vless(proxy: Proxy): string {
             Array.isArray(proxy.alpn) ? proxy.alpn.join(',') : proxy.alpn,
         )}`;
     }
-    let allowInsecure = '';
-    if (proxy['skip-cert-verify']) {
-        allowInsecure = `&allowInsecure=1`;
-    }
+    const tlsSkipParams =
+        proxy['skip-cert-verify'] ? appendSkipCertVerifyParams(proxy) : '';
     let sni = '';
     if (proxy.sni) {
         sni = `&sni=${encodeURIComponent(proxy.sni)}`;
@@ -250,7 +260,7 @@ function vless(proxy: Proxy): string {
         proxy.port
     }?security=${encodeURIComponent(
         security,
-    )}${vlessTransport}${alpn}${allowInsecure}${sni}${fp}${flow}${sid}${spx}${pbk}${mode}${extra}${pqv}${encryption}${udpParam}#${encodeURIComponent(
+    )}${vlessTransport}${alpn}${tlsSkipParams}${sni}${fp}${flow}${sid}${spx}${pbk}${mode}${extra}${pqv}${encryption}${udpParam}#${encodeURIComponent(
         proxy.name,
     )}`;
 }
@@ -564,7 +574,7 @@ export default function URI_Producer(): Producer {
                 result = `trojan://${proxy.password}@${proxy.server}:${
                     proxy.port
                 }?sni=${encodeURIComponent(proxy.sni || proxy.server)}${
-                    proxy['skip-cert-verify'] ? '&allowInsecure=1' : ''
+                    proxy['skip-cert-verify'] ? appendSkipCertVerifyParams(proxy) : ''
                 }${trojanTransport}${trojanAlpn}${trojanFp}${trojanSecurity}${trojanSid}${trojanPbk}${trojanSpx}${trojanMode}${trojanExtra}${trojanUdp}#${encodeURIComponent(
                     proxy.name,
                 )}`;
@@ -580,7 +590,13 @@ export default function URI_Producer(): Producer {
                     hysteria2params.push(`keepalive=${proxy['keepalive']}`);
                 }
                 if (proxy['skip-cert-verify']) {
-                    hysteria2params.push(`insecure=1`);
+                    if (proxy['tls-fingerprint']) {
+                        hysteria2params.push(
+                            `pinSHA256=${encodeURIComponent(normalizeCertSHA256(proxy['tls-fingerprint']))}`,
+                        );
+                    } else {
+                        hysteria2params.push(`insecure=1`);
+                    }
                 }
                 if (proxy.obfs) {
                     hysteria2params.push(

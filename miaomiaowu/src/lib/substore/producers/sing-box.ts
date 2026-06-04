@@ -68,7 +68,7 @@ interface TLS {
   fragment?: boolean
   fragment_fallback_delay?: string
   record_fragment?: boolean
-  certificate_public_key_sha256?: string
+  certificate_public_key_sha256?: string | string[]
   client_certificate?: string
   client_certificate_path?: string
   client_key?: string
@@ -500,11 +500,23 @@ const grpcParser = (proxy: Proxy, parsedProxy: ParsedProxy): void => {
 }
 
 const tlsParser = (proxy: Proxy, parsedProxy: ParsedProxy): void => {
-  if (proxy.tls) parsedProxy.tls!.enabled = true
+  if (!parsedProxy.tls) {
+    parsedProxy.tls = { enabled: false }
+  }
+  if (proxy.tls || parsedProxy.tls.enabled) {
+    parsedProxy.tls.enabled = true
+  }
   if (proxy.servername && proxy.servername !== '') parsedProxy.tls!.server_name = proxy.servername
   if (proxy.peer && proxy.peer !== '') parsedProxy.tls!.server_name = proxy.peer
   if (proxy.sni && proxy.sni !== '') parsedProxy.tls!.server_name = proxy.sni
-  if (proxy['skip-cert-verify']) parsedProxy.tls!.insecure = true
+  if (proxy['tls-fingerprint']) {
+    parsedProxy.tls!.certificate_public_key_sha256 = [
+      proxy['tls-fingerprint'].replace(/[: ]/g, '').toLowerCase(),
+    ]
+    delete parsedProxy.tls!.insecure
+  } else if (proxy['skip-cert-verify']) {
+    parsedProxy.tls!.insecure = true
+  }
   if (proxy.insecure) parsedProxy.tls!.insecure = true
   if (proxy['disable-sni']) parsedProxy.tls!.disable_sni = true
   if (typeof proxy.alpn === 'string') {

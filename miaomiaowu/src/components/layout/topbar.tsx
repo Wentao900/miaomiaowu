@@ -1,6 +1,6 @@
 import { Link } from '@tanstack/react-router'
 import { useQuery } from '@tanstack/react-query'
-import { Activity, Link as LinkIcon, Radar, Users, Files, Zap, Network, Menu, FileCode, Settings, FileStack } from 'lucide-react'
+import { Activity, Link as LinkIcon, Radar, Users, Files, Zap, Network, Menu, FileCode, Settings, FileStack, Megaphone } from 'lucide-react'
 import { ThemeSwitch } from '@/components/theme-switch'
 import { UserMenu } from './user-menu'
 import { useAuthStore } from '@/stores/auth-store'
@@ -63,6 +63,11 @@ const adminNavLinks = [
     title: '用户管理',
     to: '/users',
     icon: Users,
+  },
+  {
+    title: '公告管理',
+    to: '/announcements',
+    icon: Megaphone,
   },
   {
     title: '系统设置',

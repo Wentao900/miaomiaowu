@@ -197,6 +197,8 @@ func main() {
 	mux.Handle("/api/admin/proxy-groups/sync", auth.RequireAdmin(tokenStore, userRepo, handler.NewProxyGroupsSyncHandler(repo, proxyGroupsStore)))
 	mux.Handle("/api/admin/notify-config", auth.RequireAdmin(tokenStore, userRepo, handler.NewNotifyConfigHandler(repo)))
 	mux.Handle("/api/admin/notify-config/", auth.RequireAdmin(tokenStore, userRepo, handler.NewNotifyConfigHandler(repo)))
+	mux.Handle("/api/admin/announcements", auth.RequireAdmin(tokenStore, userRepo, handler.NewAnnouncementsAdminHandler(repo)))
+	mux.Handle("/api/admin/announcements/", auth.RequireAdmin(tokenStore, userRepo, handler.NewAnnouncementsAdminHandler(repo)))
 
 	// TCPing endpoint (admin only)
 	mux.Handle("/api/admin/tcping", auth.RequireAdmin(tokenStore, userRepo, handler.NewTCPingHandler()))
@@ -206,6 +208,7 @@ func main() {
 	mux.Handle("/api/proxy-groups", auth.RequireToken(tokenStore, handler.NewProxyGroupsHandler(proxyGroupsStore)))
 	mux.Handle("/api/user/password", auth.RequireToken(tokenStore, handler.NewPasswordHandler(authManager)))
 	mux.Handle("/api/user/profile", auth.RequireToken(tokenStore, handler.NewProfileHandler(repo)))
+	mux.Handle("/api/user/announcements", auth.RequireToken(tokenStore, handler.NewAnnouncementsUserHandler(repo)))
 	mux.Handle("/api/user/settings", auth.RequireToken(tokenStore, handler.NewUserSettingsHandler(repo, tokenStore)))
 	mux.Handle("/api/user/config", auth.RequireToken(tokenStore, handler.NewUserConfigHandler(repo)))
 	mux.Handle("/api/user/2fa/status", auth.RequireToken(tokenStore, handler.NewTwoFactorStatusHandler(repo)))

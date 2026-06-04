@@ -4,10 +4,13 @@ import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 import { TanStackRouterDevtools } from '@tanstack/react-router-devtools'
 import { Toaster } from '@/components/ui/sonner'
 import { NavigationProgress } from '@/components/navigation-progress'
+import { AnnouncementBanner } from '@/components/announcement-banner'
 import { DebugFloatingViewer } from '@/components/debug-floating-viewer'
+import { useAuthStore } from '@/stores/auth-store'
 import { useEffect, useState } from 'react'
 
 function RootComponent() {
+  const accessToken = useAuthStore((s) => s.auth.accessToken)
   const [isMobile, setIsMobile] = useState(false)
 
   useEffect(() => {
@@ -24,6 +27,7 @@ function RootComponent() {
   return (
     <>
       <NavigationProgress />
+      {accessToken ? <AnnouncementBanner /> : null}
       <Outlet />
       <DebugFloatingViewer />
       <Toaster

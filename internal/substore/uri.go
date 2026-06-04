@@ -316,10 +316,7 @@ func (p *URIProducer) encodeVLESS(proxy Proxy) (string, error) {
 		params.Set("flow", flow)
 	}
 
-	// Skip cert verify
-	if GetBool(proxy, "skip-cert-verify") {
-		params.Set("allowInsecure", "1")
-	}
+	applySkipCertVerifyURI(params, proxy)
 
 	// Encryption
 	if encryption := GetString(proxy, "encryption"); encryption != "" {
@@ -465,10 +462,7 @@ func (p *URIProducer) encodeTrojan(proxy Proxy) (string, error) {
 	}
 	params.Set("sni", sni)
 
-	// Skip cert verify
-	if GetBool(proxy, "skip-cert-verify") {
-		params.Set("allowInsecure", "1")
-	}
+	applySkipCertVerifyURI(params, proxy)
 
 	// ALPN
 	if alpn := GetStringSlice(proxy, "alpn"); len(alpn) > 0 {
@@ -696,9 +690,12 @@ func (p *URIProducer) encodeHysteria2(proxy Proxy) (string, error) {
 		params.Set("sni", sni)
 	}
 
-	// Skip cert verify
 	if GetBool(proxy, "skip-cert-verify") {
-		params.Set("insecure", "1")
+		if fp := GetString(proxy, "tls-fingerprint"); fp != "" {
+			params.Set("pinSHA256", NormalizeCertSHA256(fp))
+		} else {
+			params.Set("insecure", "1")
+		}
 	}
 
 	// ALPN
@@ -731,7 +728,7 @@ func (p *URIProducer) encodeHysteria2(proxy Proxy) (string, error) {
 
 	// tls-fingerprint → pinSHA256 (frontend line 602-608)
 	if tlsFingerprint := GetString(proxy, "tls-fingerprint"); tlsFingerprint != "" {
-		params.Set("pinSHA256", tlsFingerprint)
+		params.Set("pinSHA256", NormalizeCertSHA256(tlsFingerprint))
 	}
 
 	// tfo → fastopen (frontend line 609-611)

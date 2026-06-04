@@ -62,6 +62,26 @@ func (r *Result) String() string {
 	return strings.Join(r.Output, "")
 }
 
+// NormalizeCertSHA256 strips separators and lowercases a certificate SHA-256 fingerprint for URI params.
+func NormalizeCertSHA256(fp string) string {
+	fp = strings.TrimSpace(fp)
+	fp = strings.ReplaceAll(fp, ":", "")
+	fp = strings.ReplaceAll(fp, " ", "")
+	return strings.ToLower(fp)
+}
+
+// applySkipCertVerifyURI sets TLS skip-verify URI params compatible with Xray-core >= 2026-06-01.
+// allowInsecure was removed from Xray; use pinSHA256 when tls-fingerprint is available.
+func applySkipCertVerifyURI(params url.Values, proxy Proxy) {
+	if fp := GetString(proxy, "tls-fingerprint"); fp != "" {
+		params.Set("pinSHA256", NormalizeCertSHA256(fp))
+		return
+	}
+	// Omit allowInsecure=1 — rejected by Xray-core since 2026-06-01.
+	// Nodes with valid CA certificates work without extra params.
+	_ = GetBool(proxy, "skip-cert-verify")
+}
+
 // IsPresent checks if a value is present (not nil/empty)
 func IsPresent(obj interface{}, attrs ...string) bool {
 	if obj == nil {
